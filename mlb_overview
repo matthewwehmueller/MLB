@@ -1,0 +1,156 @@
+-- Overall team table with win percentage
+SELECT t.franchID as FranchiseID, SUM(t.W) as TotalW, SUM(t.L) AS TotalL, (SUM(t.W)+SUM(t.L)) AS TotalG, ((SUM(t.W)/(SUM(t.W) + SUM(t.L))*100)) AS WinPercentage
+FROM Teams AS t
+JOIN TeamsFranchises AS tf
+	ON t.franchID = tf.franchID
+WHERE tf.active = 'Y'
+GROUP BY t.franchID
+ORDER BY WinPercentage DESC;
+
+-- Who had the most total homeruns in a single season?
+SELECT m.nameFirst, m.nameLast, b.HR, b. yearID
+FROM Master as m
+JOIN Batting as b
+	ON m.playerID = b.playerID
+WHERE b.HR > 45
+ORDER BY HR DESC; 
+
+-- Salaries into value
+-- What team has the best batting average overall?
+SELECT tf.franchName, SUM(b.AB) AS TotalABs, SUM(b.H) AS TotalHits, (SUM(b.H)/SUM(b.AB)) AS BattingAvg
+FROM Batting AS b
+JOIN Teams AS t
+	ON b.teamID = t.teamID
+JOIN TeamsFranchises AS tf
+	ON t.franchID = tf.franchID
+GROUP BY tf.franchName
+ORDER BY BattingAvg DESC;
+
+-- Best hitting team all time?
+-- Which player has the highest career batting average?
+SELECT b.playerID, (H/AB) AS BattingAVG, AB, H, yearID, nameFirst, nameLast
+FROM Batting b
+JOIN Master m
+	ON m.playerID = b.playerID
+WHERE AB > 100
+ORDER BY BattingAVG DESC;
+
+-- What pitcher had the highest amount of strikeouts in a year?
+SELECT p.playerID, ERA, yearID, nameFirst, nameLast
+FROM Pitching p
+JOIN Master m
+	ON p.playerID = m.playerID
+WHERE GS > 15
+ORDER BY ERA ASC;
+
+-- Which year had the most homeruns?
+SELECT yearID, SUM(HR) AS TotalHRs
+FROM Batting
+GROUP BY yearID
+ORDER BY TotalHRs DESC;
+
+-- Which team had the most wins in a year? And did they win World Series?
+SELECT franchID, sp.yearID,
+	CASE 
+		WHEN sp.round = 'WS' AND t.franchID = sp.teamIDwinner THEN 'Y'
+		WHEN sp.round = 'WS' AND t.franchID != sp.teamIDwinner THEN 'N'
+        ELSE null
+	END AS WorldSeriesWinner
+FROM;
+
+SELECT franchID, yearID, SUM(W) as RegWins, 
+	CASE 
+		WHEN sp.round = 'WS' AND t.franchID = sp.teamIDwinner THEN 'Y'
+		WHEN sp.round = 'WS' AND t.franchID != sp.teamIDwinner THEN 'N'
+        ELSE null
+	END AS WorldSeriesWinner
+FROM Teams
+JOIN SeriesPost
+ON 
+GROUP BY 1, 2
+ORDER BY RegWins DESC;
+
+SELECT yearID, teamIDwinner, round
+FROM SeriesPost
+WHERE round = 'WS';
+
+SELECT franchID, yearID, SUM(W) as RegWins
+FROM Teams
+GROUP BY 1, 2
+ORDER BY RegWins DESC;
+
+
+-- Which position steals the most bases?
+SELECT POS, AVG(b.SB)
+FROM Batting b 
+	JOIN Fielding f
+    ON b.playerID = f.playerID
+GROUP BY POS;
+
+
+-- What position gets the most average salary
+SELECT POS, AVG(s.salary) AVG_Salary
+FROM Fielding f
+JOIN Salaries s
+ON f.playerID = s.playerID
+GROUP BY POS
+ORDER BY 2 DESC;
+
+
+-- Most RBIs in a season?
+SELECT b.playerID, yearID, MAX(RBI) AS RBIs, HR
+FROM Batting b
+GROUP BY 1, 2, 4
+ORDER BY RBIs DESC;
+-- What position wins MVP the most?
+
+-- Best ERA for CY Young winner?
+-- Worst ERA for CY Young winner?
+-- Most strikeouts for CY young winner?
+-- Are the best performers selected for All Star game?
+-- How often does the CY Young winner or MVP get to the World Series?
+
+-- Is there a error prone position?
+SELECT POS, AVG(E) AS AvgErrors
+FROM Fielding
+WHERE G >
+	(SELECT AVG(G) AS AvgGames 
+    FROM Fielding)
+GROUP BY POS
+ORDER BY AvgErrors DESC;
+
+-- Which position has most HRs and RBIs?
+SELECT f.POS, SUM(RBI), SUM(HR)
+FROM Batting b
+JOIN Fielding f
+	ON b.playerID = f.playerID
+	AND b.yearID = f.yearID
+GROUP BY POS;
+
+-- Which college has the most MLB players?
+SELECT s.schoolID, COUNT(DISTINCT(playerID)) AS MLBPlayers
+FROM CollegePlaying c
+JOIN Schools s
+	ON c.schoolID = s.schoolID
+GROUP BY s.schoolID
+ORDER BY MLBPlayers DESC;
+
+-- Which college has the most awards?
+SELECT yearID AS ID
+FROM Batting
+ORDER BY yearID DESC;
+
+-- Sabermetrics Offense for STL Cardinals
+SELECT playerID, teamID, yearID, G, AB, (H/AB) AS AVG, HR, R, RBI, SB, (BB/AB) AS BB_Percentage, (SO/AB) AS K_Percentage, (2B+(2*3B)+(3*HR))/AB AS ISO, (H+BB+HBP)/(AB+BB+HBP+SF) AS OBP, (H+(2*2B)+(3*3B)+(4*HR))/AB AS SLG
+FROM Batting
+WHERE yearID = 2016 AND teamID = 'SLN';
+
+-- MVP Sabermetrics Offense
+SELECT DISTINCT(b.playerID), m.nameFirst, m.nameLast, b.yearID, ap.awardID, G, AB, (H/AB) AS AVG, HR, R, RBI, SB, (BB/AB) AS BB_Percentage, (SO/AB) AS K_Percentage, (2B+(2*3B)+(3*HR))/AB AS ISO, (H+BB+HBP)/(AB+BB+HBP+SF) AS OBP, (H+(2*2B)+(3*3B)+(4*HR))/AB AS SLG
+FROM Batting b
+JOIN AwardsPlayers ap
+	ON b.playerID = ap.playerID AND b.yearID = ap.yearID
+JOIN Master m
+	ON b.playerID = m.playerID
+WHERE awardID = 'Most Valuable Player'
+ORDER BY yearID DESC;
